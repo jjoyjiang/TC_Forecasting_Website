@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tropical Cyclone Forecast</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
 </head>
 <body>
   <div class="container">
@@ -14,11 +14,12 @@
     </header>
 
     <nav>
-        <ul>
-          <li><a href="observed_page.html">Observed Patterns</a></li>
-          <li><a href="verification_page.html" class="active">Predicted Cyclones</a></li>
-        </ul>
-      </nav>
+      <ul>
+        <li><a href="{{ url_for('observed') }}">Observed Patterns</a></li>
+        <li><a href="{{ url_for('verification') }}" class="active">Predicted Cyclones</a></li>
+      </ul>
+    </nav>
+
       
     <div class="description">
       <p>[description].</p>
