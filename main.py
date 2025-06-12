@@ -12,7 +12,7 @@ def background_updater():
     while True:
         now = datetime.now()
         # Check if it's the 1st or 15th of the month
-        if now.day in [1, 12] and (last_run_date is None or last_run_date.date() != now.date()):
+        if now.day in [1, 15] and (last_run_date is None or last_run_date.date() != now.date()):
             print(f"Running update on {now}")
             gg.update_graphs()
             print("Done updating!")
