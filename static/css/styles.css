@@ -9,7 +9,7 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
-    background: #f5f7fa;
+    background: white;
     color: var(--text-color);
     line-height: 1.6;
   }
@@ -120,6 +120,16 @@
     border-top: 1px solid #e0e0e0;
     color: #7f8c8d;
     font-size: 0.9rem;
+  }
+
+  iframe {
+    display: block;         /* Makes margin auto work */
+    margin: 0 auto;         /* Horizontally centers the iframe */
+    width: 120%;            /* Make iframe fill its container width (adjust as needed) */
+    /* max-width: 120%;        /* Optional: allow it to be up to 120% wide */
+    /* height: auto;           /* Height auto (no fixed limit) */
+    border: none;
+    min-height: 500px;      /* Optional: at least 500px tall */
   }
   
   @media (max-width: 768px) {

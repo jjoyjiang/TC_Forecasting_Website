@@ -18,7 +18,7 @@ def storm_count(df):
 
     min_wind = 33 #knots
     min_time_steps = 9 # 6 hour times steps * 8 = 48 hours. Actually make it 9 for over two days
-    allowed_types = {'SS', 'TS'}  # Hurricanes, Subtropical Storms, Tropical Storms
+    allowed_types = {'HU','SS', 'TS'}  # Hurricanes, Subtropical Storms, Tropical Storms
 
     storm_years = defaultdict(list)
     for storm_id in basin.keys:
@@ -26,7 +26,7 @@ def storm_count(df):
         storm_years[year].append(storm_id)
 
     storm_counts = []
-    for year in df['year']:
+    for year in df['year'].unique():
         count = 0
         for storm_id in storm_years.get(year, []):
             # Using basin.data gets raw data directly, much faster than get_storm()
@@ -48,20 +48,25 @@ def storm_count(df):
     df['count'] = storm_counts
 
 def hurricane_count(df):
+    print('hurricane5')
     basin = tracks.TrackDataset(basin='north_atlantic', source='hurdat', include_btk=False)
+    print('hurricane5')
     allowed_types = {'HU'}
     storm_years = defaultdict(list)
+    print('hurricane5')
     for storm_id in basin.keys:
         year=int(storm_id[-4:])
         storm_years[year].append(storm_id)
+    print('hurricane5')
     hurricane_counts = []
-    for year in df['year']:
+    for year in df['year'].unique():
         count = 0
         for storm_id in storm_years.get(year, []):
            if any(t in allowed_types 
                   for t in basin.data[storm_id]['type']):
                 count += 1
         hurricane_counts.append(count)
+    print('hurricane5')
     df['count'] = hurricane_counts
 
 def pdi_count(df):
@@ -118,8 +123,10 @@ import numpy as np
 # graphs lambda as a function of time. Also includes percentiles for visualization
 # file_name should be the name of the image or pdf you wish to save.
 # ex: percentiles.png or percentiles.pdf
-def hurricane_graph(df, file_name):
+def hurricane_graph(df, file_name, user_id = None, start_year = None, end_year = None):
     df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     plt.figure(figsize=(12, 6))
 
     # plt.plot(df['year'], df['percentile_05'], label='5th percentile', linestyle='--')
@@ -149,8 +156,11 @@ def hurricane_graph(df, file_name):
     plt.grid(True)
     plt.tight_layout()
 
+    if user_id: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "user_sessions", user_id))
+    else: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "default"))
 
-    download_dir = os.path.abspath(os.path.join("static", "images"))
     os.makedirs(download_dir, exist_ok=True)
     output_path = os.path.join(download_dir, file_name)
     if os.path.exists(output_path):
@@ -161,8 +171,10 @@ def hurricane_graph(df, file_name):
     # Uncomment to show the image on your screen as a popup window
     # plt.show()
 
-def TC_params_graph(df, file_name):
+def TC_params_graph(df, file_name, user_id = None, start_year = None, end_year = None):
     df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     plt.figure(figsize=(12, 6))
 
     plt.plot(df['year'], df['beta'],color='red', label='beta')
@@ -176,7 +188,11 @@ def TC_params_graph(df, file_name):
     plt.tight_layout()
     plt.legend()
 
-    download_dir = os.path.abspath(os.path.join("static", "images"))
+    if user_id: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "user_sessions", user_id))
+    else: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "default"))
+    
     os.makedirs(download_dir, exist_ok=True)
     output_path = os.path.join(download_dir, file_name)
     if os.path.exists(output_path):
@@ -185,8 +201,10 @@ def TC_params_graph(df, file_name):
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
 
 #via ChatGPT
-def params_graph_dual_axis(df, file_name):
+def params_graph_dual_axis(df, file_name, user_id = None, start_year = None, end_year = None):
     df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     fig, ax1 = plt.subplots(figsize=(12, 6))
 
     # First axis for beta (left y-axis)
@@ -209,7 +227,11 @@ def params_graph_dual_axis(df, file_name):
     fig.tight_layout()
 
     # Save the figure
-    download_dir = os.path.abspath(os.path.join("static", "images"))
+    if user_id: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "user_sessions", user_id))
+    else: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "default"))
+
     os.makedirs(download_dir, exist_ok=True)
     output_path = os.path.join(download_dir, file_name)
     if os.path.exists(output_path):
@@ -217,8 +239,10 @@ def params_graph_dual_axis(df, file_name):
         print(f"Removed old image: {output_path}")
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
 
-def TC_graph(df, file_name):
+def TC_graph(df, file_name, user_id = None, start_year = None, end_year = None):
     df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     plt.figure(figsize=(12, 6))
 
     plt.plot(df['year'], df['p_50'],color='gainsboro', label='50th percentile (median)')
@@ -242,7 +266,11 @@ def TC_graph(df, file_name):
     plt.grid(True)
     plt.tight_layout()
 
-    download_dir = os.path.abspath(os.path.join("static", "images"))
+    if user_id: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "user_sessions", user_id))
+    else: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "default"))
+    
     os.makedirs(download_dir, exist_ok=True)
     output_path = os.path.join(download_dir, file_name)
     if os.path.exists(output_path):
@@ -255,8 +283,10 @@ def TC_graph(df, file_name):
 
 # --------------------------------------------
 # EXACT SAME AS TC_graph. REFACTOR LATER
-def PDI_graph(df, file_name):
+def PDI_graph(df, file_name, user_id = None, start_year = None, end_year = None):
     df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     plt.figure(figsize=(12, 6))
 
     plt.plot(df['year'], df['p_50'],color='gainsboro', label='50th percentile (median)')
@@ -280,7 +310,11 @@ def PDI_graph(df, file_name):
     plt.grid(True)
     plt.tight_layout()
 
-    download_dir = os.path.abspath(os.path.join("static", "images"))
+    if user_id: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "user_sessions", user_id))
+    else: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "default"))
+
     os.makedirs(download_dir, exist_ok=True)
     output_path = os.path.join(download_dir, file_name)
     if os.path.exists(output_path):
@@ -291,8 +325,10 @@ def PDI_graph(df, file_name):
     # Uncomment to show the image on your screen as a popup window
     # plt.show()
 
-def ACE_graph(df, file_name):
+def ACE_graph(df, file_name, user_id = None, start_year = None, end_year = None):
     df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     plt.figure(figsize=(12, 6))
 
     plt.plot(df['year'], df['p_50'],color='gainsboro', label='50th percentile (median)')
@@ -316,7 +352,11 @@ def ACE_graph(df, file_name):
     plt.grid(True)
     plt.tight_layout()
 
-    download_dir = os.path.abspath(os.path.join("static", "images"))
+    if user_id: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "user_sessions", user_id))
+    else: 
+        download_dir = os.path.abspath(os.path.join("static", "images", "default"))
+    
     os.makedirs(download_dir, exist_ok=True)
     output_path = os.path.join(download_dir, file_name)
     if os.path.exists(output_path):
@@ -624,3 +664,333 @@ from datetime import datetime
 def get_current_year():
     current_year = datetime.now().year
     return current_year
+
+
+
+
+import io
+
+def new_hurricane_graph(df, title, user_id = None, start_year = None, end_year = None):
+    df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
+    plt.figure(figsize=(12, 6))
+
+    # plt.plot(df['year'], df['percentile_05'], label='5th percentile', linestyle='--')
+    # plt.plot(df['year'], df['percentile_25'], label='25th percentile', linestyle='--')
+    # plt.plot(df['year'], df['p_50'],color='red', label='50th percentile (median)')
+    # plt.plot(df['year'], df['percentile_75'], label='75th percentile', linestyle='--')
+    # plt.plot(df['year'], df['percentile_95'], label='95th percentile', linestyle='--')
+
+    # plt.step(df['year'], df['lambda'], where='mid', label='Lambda (mean)', color='black', linewidth=2)
+
+    plt.plot(df['year'], df['p_50'],color='red', linewidth=3, label='50th percentile (median)')
+
+    plt.fill_between(df['year'], df['p_05'], df['p_25'], 
+                     color='blue', alpha=0.3)
+    plt.fill_between(df['year'], df['p_25'], df['p_75'], 
+                     color='blue', alpha=0.5)
+    plt.fill_between(df['year'], df['p_75'], df['p_95'], 
+                     color='blue', alpha=0.3)
+
+    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
+
+    plt.xlabel('Year', fontsize=24)
+    plt.xticks(df['year'][::5], fontsize = 21)  # Show every second year
+    plt.ylabel('# of Hurricanes', fontsize = 24)
+    plt.yticks([2, 4, 6, 8, 10, 12, 14, 16, 18, 20], fontsize=21)
+    plt.title(title,
+            fontsize=26,
+            color='black',
+            fontweight='bold',
+            loc='center'  # 'center', 'left', or 'right'
+            )
+    # Use the 'label' paramter in the previous functions to make legend
+    # plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Get current figure
+    fig = plt.gcf()
+
+    # 3. Save to in-memory buffer
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+
+    img_bytes = buf.read()
+
+    # 5. Return image bytes
+    return img_bytes
+
+
+
+def new_TC_graph(df, title, user_id = None, start_year = None, end_year = None):
+    df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
+    plt.figure(figsize=(12, 6))
+
+    plt.plot(df['year'], df['p_50'],color='red', linewidth=3, label='50th percentile (median)')
+
+    plt.fill_between(df['year'], df['p_05'], df['p_25'], 
+                     color='blue', alpha=0.3)
+    plt.fill_between(df['year'], df['p_25'], df['p_75'], 
+                     color='blue', alpha=0.5)
+    plt.fill_between(df['year'], df['p_75'], df['p_95'], 
+                     color='blue', alpha=0.3)
+
+    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
+
+    plt.xlabel('Year', fontsize=24)
+    plt.xticks(df['year'][::5], fontsize = 21)  # Show every second year
+    plt.ylabel('# of Tropical Cyclones', fontsize = 24)
+    plt.yticks([4, 8, 12, 16, 20, 24], fontsize=21)
+    plt.title(title,
+            fontsize=26,
+            color='black',
+            fontweight='bold',
+            loc='center'  # 'center', 'left', or 'right'
+            )
+    # Use the 'label' paramter in the previous functions to make legend
+    # plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Get current figure
+    fig = plt.gcf()
+
+    # 3. Save to in-memory buffer
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+
+    img_bytes = buf.read()
+
+    # 5. Return image bytes
+    return img_bytes
+
+# --------------------------------------------
+# EXACT SAME AS TC_graph. REFACTOR LATER
+def new_PDI_graph(df, title, user_id = None, start_year = None, end_year = None):
+    df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
+    plt.figure(figsize=(12, 6))
+
+    plt.plot(df['year'], df['p_50'],color='red', linewidth=3, label='50th percentile (median)')
+
+    plt.fill_between(df['year'], df['p_05'], df['p_25'], 
+                     color='blue', alpha=0.3)
+    plt.fill_between(df['year'], df['p_25'], df['p_75'], 
+                     color='blue', alpha=0.5)
+    plt.fill_between(df['year'], df['p_75'], df['p_95'], 
+                     color='blue', alpha=0.3)
+
+    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
+
+    plt.xlabel('Year', fontsize=24)
+    plt.xticks(df['year'][::5], fontsize=21)  # Show every fifth year
+    plt.ylabel('PDI (10^10 knots^3)', fontsize=24)
+    plt.yticks([2, 4, 6, 8, 10, 12, 14], fontsize=21)
+    plt.title(title, 
+            fontsize=26,
+            color='black',
+            fontweight='bold',
+            loc='center'  # 'center', 'left', or 'right'
+            )
+    # Use the 'label' paramter in the previous functions to make legend
+    # plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Get current figure
+    fig = plt.gcf()
+
+    # 3. Save to in-memory buffer
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+
+    img_bytes = buf.read()
+
+    # 5. Return image bytes
+    return img_bytes
+
+def new_ACE_graph(df, title, user_id = None, start_year = None, end_year = None):
+    df = df.copy()
+    if start_year and end_year:
+        df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
+    plt.figure(figsize=(12, 6))
+
+    plt.plot(df['year'], df['p_50'],color='red', linewidth=3, label='50th percentile (median)')
+
+    plt.fill_between(df['year'], df['p_05'], df['p_25'], 
+                     color='blue', alpha=0.3)
+    plt.fill_between(df['year'], df['p_25'], df['p_75'], 
+                     color='blue', alpha=0.5)
+    plt.fill_between(df['year'], df['p_75'], df['p_95'], 
+                     color='blue', alpha=0.3)
+
+    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
+
+    plt.xlabel('Year', fontsize=24)
+    plt.xticks(df['year'][::5], fontsize=21)  # Show every fifth year
+    plt.ylabel('ACE (10^4 knots^2)', fontsize=24)
+    plt.yticks([4, 8, 12, 16, 20, 24], fontsize=21)
+    plt.title(title, 
+            fontsize=26,
+            color='black',
+            fontweight='bold',
+            loc='center'  # 'center', 'left', or 'right'
+            )
+    # Use the 'label' paramter in the previous functions to make legend
+    # plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Get current figure
+    fig = plt.gcf()
+
+    # 3. Save to in-memory buffer
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+
+    img_bytes = buf.read()
+
+    # 5. Return image bytes
+    return img_bytes
+
+
+
+def lam_hurricane(df):
+    filtered_df = df[(df['year'] >= 1981) & (df['year'] <= 2025)].copy()
+    filtered_df['lambda']=np.exp(1.707 + (1.388 * filtered_df['ANOMALY_MDR']) - (1.521 * filtered_df['ANOMALY_TROP']))
+    return filtered_df
+
+
+def lam_other(df):
+    df['lambda']=np.exp(df['alpha'] + (df['beta'] * df['ANOMALY_MDR']) 
+                        + (df['gamma'] * df['ANOMALY_TROP']))
+
+def poisson_ppf(df):
+    df['p_05']=poisson.ppf(0.05, df['lambda'])
+    df['p_25']=poisson.ppf(0.25, df['lambda'])
+    df['p_50']=poisson.ppf(0.50, df['lambda'])
+    df['p_75']=poisson.ppf(0.75, df['lambda'])
+    df['p_95']=poisson.ppf(0.95, df['lambda'])
+
+
+def new_TC_regression(df):
+    print('test1')
+    new_df = df.copy()
+    storm_count(new_df)
+    print('test1')   
+
+    models = {}
+    # range excludes final value
+    print('test1')
+    for year in range(2005, get_current_year() + 1):
+        df_subset = new_df[new_df['year'] <= year]
+
+        model = smf.glm(formula='count ~ ANOMALY_MDR + ANOMALY_TROP', data=df_subset, family=sm.families.Poisson())
+        results = model.fit()
+
+        models[year] = {
+        'alpha': results.params['Intercept'],
+        'beta': results.params['ANOMALY_MDR'],
+        'gamma': results.params['ANOMALY_TROP']
+    }
+    print('test1')
+    coeff_df = pd.DataFrame.from_dict(models, orient='index')
+    coeff_df.index.name = 'year'
+    coeff_df.reset_index(inplace=True)
+    print('test2')
+
+    
+    coeff_df = coeff_df.merge(
+       new_df[['year', 'ANOMALY_MDR', 'ANOMALY_TROP', 'count']],
+       on='year',
+       how='left'
+    )
+    print('test3')
+
+    print(coeff_df.head())
+
+    return coeff_df
+
+
+
+def new_PDI_regression(df):
+    print('test1')
+    new_df = df.copy()
+    pdi_count(new_df)   
+    print('test2')
+
+    models = {}
+    # range excludes final value
+    for year in range(2005, get_current_year() + 1):
+        df_subset = new_df[new_df['year'] <= year]
+
+        model = smf.glm(formula='count ~ ANOMALY_MDR + ANOMALY_TROP', data=df_subset, family=sm.families.Gamma(link=sm.families.links.Log()))
+        results = model.fit()
+
+        models[year] = {
+        'alpha': results.params['Intercept'],
+        'beta': results.params['ANOMALY_MDR'],
+        'gamma': results.params['ANOMALY_TROP']
+    }
+    print('test3')
+    coeff_df = pd.DataFrame.from_dict(models, orient='index')
+    print('test4')
+    coeff_df.index.name = 'year'
+    coeff_df.reset_index(inplace=True)
+    print('test5')
+    print(coeff_df.head())
+
+    coeff_df = coeff_df.merge(
+        new_df[['year', 'ANOMALY_MDR', 'ANOMALY_TROP', 'count']],
+        on='year',
+        how='left'
+    )
+    print('test6')
+    print(coeff_df.head())
+
+    return coeff_df
+
+
+def new_ACE_regression(df):
+    new_df = df.copy()
+    ace_count(new_df)   
+
+    models = {}
+    # range excludes final value
+    for year in range(2005, get_current_year() + 1):
+        df_subset = new_df[new_df['year'] <= year]
+
+        model = smf.glm(formula='count ~ ANOMALY_MDR + ANOMALY_TROP', data=df_subset, family=sm.families.Gamma(link=sm.families.links.Log()))
+        results = model.fit()
+
+        models[year] = {
+        'alpha': results.params['Intercept'],
+        'beta': results.params['ANOMALY_MDR'],
+        'gamma': results.params['ANOMALY_TROP']
+    }
+    coeff_df = pd.DataFrame.from_dict(models, orient='index')
+    coeff_df.index.name = 'year'
+    coeff_df.reset_index(inplace=True)
+
+    coeff_df = coeff_df.merge(
+        new_df[['year', 'ANOMALY_MDR', 'ANOMALY_TROP', 'count']],
+        on='year',
+        how='left'
+    )
+
+    print(coeff_df.head())
+
+    return coeff_df
