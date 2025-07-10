@@ -9,6 +9,7 @@ import uuid
 from py import forecasted_graphs as fg
 from py import skill_score as ss
 import io
+from py import attribute as atrb
 
 pn.extension()
 
@@ -186,6 +187,9 @@ def get_forecast_layout():
     image_pane_time_series = pn.pane.PNG(height=300, width=500)
     image_pane_skill_score_mdr = pn.pane.PNG(height=300, width=500)
     image_pane_skill_score_trop = pn.pane.PNG(height=300, width=500)
+    image_pane_attribute = pn.pane.PNG(height=300, width=500)
+    image_pane_reliability = pn.pane.PNG(height=300, width=500)
+    image_pane_roc = pn.pane.PNG(height=300, width=500)
 
     # Arrange them in a grid with captions below each image
     #image_grid = pn.GridSpec(sizing_mode='stretch_both', max_width=1000)
@@ -207,7 +211,7 @@ def get_forecast_layout():
     #)
     # Top image: time series
     # Bottom row: skill scores (MDR and Trop)
-    image_grid = pn.Column(
+    image_grid = pn.Column (
         pn.Row(
             pn.Column(image_pane_time_series),
             sizing_mode='stretch_width',
@@ -219,10 +223,19 @@ def get_forecast_layout():
             sizing_mode='stretch_width',
             align='center'
         ),
+        pn.Row(
+            pn.Column(image_pane_attribute),
+            pn.Column(image_pane_reliability),
+            pn.Column(image_pane_roc),
+            sizing_mode = 'stretch_width',
+            align= 'center'
+        ),
         sizing_mode='stretch_width',
         width=1000,
         margin=10,
+        align='center'
     )
+
 
 
     # centered_layout = pn.Column(
@@ -261,6 +274,9 @@ def get_forecast_layout():
             image_pane_time_series.object = fg.panel_predicted_graph(selected_quantity, start, end, selected_init_month, selected_center)
             image_pane_skill_score_mdr.object = ss.skill_score_generate_graph('mdr', selected_center, selected_init_month, start, end)
             image_pane_skill_score_trop.object = ss.skill_score_generate_graph('trop', selected_center, selected_init_month, start, end)
+            image_pane_attribute.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'attribute')
+            image_pane_reliability.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'reliability')
+            image_pane_roc.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'roc')
             status.object = f"Images updated for {start}–{end}"
         except Exception as e:
             status.object = f"Error updating images: {e}"
@@ -282,6 +298,7 @@ def get_forecast_layout():
         status,
         message_pane,
         image_grid,
+        #pn.Column(image_grid, align='center'),
         #centered_layout
         sizing_mode="stretch_width",
         #max_width=1600,

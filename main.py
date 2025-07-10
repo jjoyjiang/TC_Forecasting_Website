@@ -49,29 +49,6 @@ def utility_processor():
 
 
 
-USER_IMAGE_DIR = os.path.join("static", "images", "user_sessions")
-EXPIRATION_MINUTES = 30
-def cleanup_old_sessions():
-    while True:
-        now = time.time()
-        for folder in os.listdir(USER_IMAGE_DIR):
-            folder_path = os.path.join(USER_IMAGE_DIR, folder)
-            if os.path.isdir(folder_path):
-                last_modified = os.path.getmtime(folder_path)
-                age_minutes = (now - last_modified) / 60
-                if age_minutes > EXPIRATION_MINUTES:
-                    print(f"🗑️ Removing expired session folder: {folder_path}")
-                    try:
-                        # Remove all files in the folder
-                        for filename in os.listdir(folder_path):
-                            file_path = os.path.join(folder_path, filename)
-                            os.remove(file_path)
-                        os.rmdir(folder_path)
-                    except Exception as e:
-                        print(f"Error deleting {folder_path}: {e}")
-        time.sleep(600)  # Run every 10 minutes
-
-
 
 @app.route('/api/get_image')
 def get_image():
@@ -161,6 +138,5 @@ if __name__ == "__main__":
         # Only run these once in the reloaded process
         Thread(target=background_updater, daemon=True).start()
         Thread(target=run_panel, daemon=True).start()
-        Thread(target=cleanup_old_sessions, daemon=True).start()
 
     app.run(port=5000, debug=True)
