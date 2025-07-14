@@ -217,8 +217,8 @@ def skill_score_graph(df, basin, start_year, end_year, month = None, origin = No
     print('hi7')
     plt.legend(
         title='Model',
-        title_fontsize=16,     # size of the legend title
-        fontsize=14,           # size of the legend labels
+        title_fontsize=20,     # size of the legend title
+        fontsize=18,           # size of the legend labels
         bbox_to_anchor=(1.05, 1),
         loc='upper left'
     )

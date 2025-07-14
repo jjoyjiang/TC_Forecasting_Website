@@ -80,6 +80,7 @@ def run_panel():
     pn.serve({
         "/observed": pw.get_panel_layout,
         "/forecast": pw.get_forecast_layout,
+        "/multi": pw.get_multi_forecast_layout
         }, port=5010, show=False,
              websocket_origin=["localhost:5000", "localhost:5010", "127.0.0.1:5000", "127.0.0.1:5010"])
 
@@ -131,6 +132,10 @@ def observed():
 @app.route('/forecast')
 def forecast():
     return render_template('forecast_page.html', user_id=session['user_id']) 
+
+@app.route('/multi')
+def multi():
+    return render_template('test_multi.html', user_id=session['user_id']) 
 
 
 if __name__ == "__main__":

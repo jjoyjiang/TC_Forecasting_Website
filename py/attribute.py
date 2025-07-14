@@ -58,10 +58,14 @@ def reliability_plot(y_true, y_prob, title, path):
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.plot(prob_pred, prob_true, marker='o', label='Reliability Curve')
     ax.plot([0, 1], [0, 1], linestyle='--', color='gray')
-    ax.set_title(title)
-    ax.set_xlabel('Forecast Probability')
-    ax.set_ylabel('Observed Frequency')
-    ax.legend(loc='upper left')
+    ax.set_title(title, fontsize=22,
+              color='black',
+              fontweight='bold',
+              loc='center')
+    ax.set_xlabel('Forecast Probability', fontsize=20)
+    ax.set_ylabel('Observed Frequency', fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=17)
+    ax.legend(loc='upper left', fontsize = 16)
     ax.grid(False)
 
     # Draw canvas to get transforms
@@ -127,11 +131,15 @@ def attribute_plot(y_true, y_prob, title, path):
     plt.figure(figsize=(8, 6))
     plt.plot(prob_pred, prob_true, 'o-', label='Attribute Curve')
     plt.plot([0, 1], [0, 1], '--', label='Perfect Reliability')
-    plt.title(f"{title}\nResolution: {resolution:.3f}, Confidence: {np.mean(confidence):.3f}")
-    plt.xlabel('Forecast Probability')
-    plt.ylabel('Observed Frequency')
+    plt.title(f"{title}\nResolution: {resolution:.3f}, Confidence: {np.mean(confidence):.3f}", fontsize=22,
+              color='black',
+              fontweight='bold',
+              loc='center')
+    plt.xlabel('Forecast Probability', fontsize=20)
+    plt.ylabel('Observed Frequency', fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=17)
     plt.grid()
-    plt.legend()
+    plt.legend(fontsize = 16)
     
     # Get current figure
     fig = plt.gcf()
@@ -155,10 +163,14 @@ def roc_plot(y_true, y_prob, title, path):
     plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.2f}')
     plt.plot([0, 1], [0, 1], linestyle='--', color='gray')
-    plt.title(title)
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.legend()
+    plt.title(title, fontsize=23,
+              color='black',
+              fontweight='bold',
+              loc='center')
+    plt.xlabel('False Positive Rate', fontsize=21)
+    plt.ylabel('True Positive Rate', fontsize=21)
+    plt.tick_params(axis='both', which='major', labelsize=18)
+    plt.legend(fontsize=16)
     plt.grid()
 
     # Get current figure

@@ -58,16 +58,16 @@ def hurricane_count(df):
         year=int(storm_id[-4:])
         storm_years[year].append(storm_id)
     print('hurricane5')
-    hurricane_counts = []
-    for year in df['year'].unique():
-        count = 0
-        for storm_id in storm_years.get(year, []):
-           if any(t in allowed_types 
-                  for t in basin.data[storm_id]['type']):
-                count += 1
-        hurricane_counts.append(count)
-    print('hurricane5')
-    df['count'] = hurricane_counts
+    year_counts = {
+        year: sum(
+            any(t in allowed_types for t in basin.data[storm_id]['type'])
+            for storm_id in storm_years.get(year, [])
+        )
+        for year in df['year'].unique()
+    }
+    df['count'] = df['year'].map(year_counts)
+    print('done-ish')
+    print(df.head())
 
 def pdi_count(df):
     basin = tracks.TrackDataset(basin='north_atlantic', source='hurdat', include_btk=False)
@@ -670,6 +670,8 @@ def get_current_year():
 
 import io
 
+from matplotlib.ticker import MaxNLocator
+
 def new_hurricane_graph(df, title, user_id = None, start_year = None, end_year = None):
     df = df.copy()
     if start_year and end_year:
@@ -696,7 +698,9 @@ def new_hurricane_graph(df, title, user_id = None, start_year = None, end_year =
     plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
 
     plt.xlabel('Year', fontsize=24)
-    plt.xticks(df['year'][::5], fontsize = 21)  # Show every second year
+    # plt.xticks(df['year'][::5], fontsize = 21)  # Show every second year
+    plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=8, integer = True))
+    plt.tick_params(axis='x', labelsize=21)
     plt.ylabel('# of Hurricanes', fontsize = 24)
     plt.yticks([2, 4, 6, 8, 10, 12, 14, 16, 18, 20], fontsize=21)
     plt.title(title,
@@ -744,7 +748,8 @@ def new_TC_graph(df, title, user_id = None, start_year = None, end_year = None):
     plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
 
     plt.xlabel('Year', fontsize=24)
-    plt.xticks(df['year'][::5], fontsize = 21)  # Show every second year
+    plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=8, integer = True))
+    plt.tick_params(axis='x', labelsize=21)
     plt.ylabel('# of Tropical Cyclones', fontsize = 24)
     plt.yticks([4, 8, 12, 16, 20, 24], fontsize=21)
     plt.title(title,
@@ -792,8 +797,9 @@ def new_PDI_graph(df, title, user_id = None, start_year = None, end_year = None)
     plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
 
     plt.xlabel('Year', fontsize=24)
-    plt.xticks(df['year'][::5], fontsize=21)  # Show every fifth year
-    plt.ylabel('PDI (10^10 knots^3)', fontsize=24)
+    plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=8, integer = True))
+    plt.tick_params(axis='x', labelsize=21)
+    plt.ylabel(r'PDI ($10^{10}$ knots$^3$)', fontsize=24)
     plt.yticks([2, 4, 6, 8, 10, 12, 14], fontsize=21)
     plt.title(title, 
             fontsize=26,
@@ -838,8 +844,9 @@ def new_ACE_graph(df, title, user_id = None, start_year = None, end_year = None)
     plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
 
     plt.xlabel('Year', fontsize=24)
-    plt.xticks(df['year'][::5], fontsize=21)  # Show every fifth year
-    plt.ylabel('ACE (10^4 knots^2)', fontsize=24)
+    plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=8, integer = True))
+    plt.tick_params(axis='x', labelsize=21)
+    plt.ylabel(r'ACE ($10^4$ knots$^2$)', fontsize=24)
     plt.yticks([4, 8, 12, 16, 20, 24], fontsize=21)
     plt.title(title, 
             fontsize=26,
