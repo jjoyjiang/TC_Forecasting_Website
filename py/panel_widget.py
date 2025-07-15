@@ -193,8 +193,7 @@ def get_forecast_layout():
     status = pn.pane.Markdown()
     # Create 2 image panes -- one is time series, one is skill score
     image_pane_time_series = pn.pane.PNG(height=300, width=500)
-    image_pane_skill_score_mdr = pn.pane.PNG(height=300, width=500)
-    image_pane_skill_score_trop = pn.pane.PNG(height=300, width=500)
+    image_pane_skill_score = pn.pane.PNG(height=300, width=500)
     image_pane_attribute = pn.pane.PNG(height=300, width=500)
     image_pane_reliability = pn.pane.PNG(height=300, width=500)
     image_pane_roc = pn.pane.PNG(height=300, width=500)
@@ -226,8 +225,7 @@ def get_forecast_layout():
             align='center'
         ),
         pn.Row(
-            pn.Column(image_pane_skill_score_mdr),
-            pn.Column(image_pane_skill_score_trop),
+            pn.Column(image_pane_skill_score),
             sizing_mode='stretch_width',
             align='center'
         ),
@@ -280,8 +278,7 @@ def get_forecast_layout():
             # img_bytes = fg.panel_predicted_graph(selected_quantity, start, end, selected_init_month, selected_center)
             # image_pane_time_series.object = io.BytesIO(img_bytes)
             image_pane_time_series.object = fg.panel_predicted_graph(selected_quantity, start, end, selected_init_month, selected_center)
-            image_pane_skill_score_mdr.object = ss.skill_score_generate_graph('mdr', selected_center, selected_init_month, start, end)
-            image_pane_skill_score_trop.object = ss.skill_score_generate_graph('trop', selected_center, selected_init_month, start, end)
+            image_pane_skill_score.object = ss.skill_score_generate_graph(selected_center, selected_init_month, start, end)
             image_pane_attribute.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'attribute')
             image_pane_reliability.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'reliability')
             image_pane_roc.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'roc')

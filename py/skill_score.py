@@ -17,7 +17,7 @@ MONTH_MAP = {
 
 
 from datetime import datetime
-def skill_score_generate_graph(basin, origin, month, start_year, end_year):
+def skill_score_generate_graph(origin, month, start_year, end_year):
     if isinstance(month, str):
         month = datetime.strptime(month, "%B").month  # 'June' -> 6
     origin = origin.lower()
@@ -29,85 +29,101 @@ def skill_score_generate_graph(basin, origin, month, start_year, end_year):
     observed_df = pd.read_csv(csv_path)
     print('CHECK2')
 
-    csv_path = os.path.join('static', 'downloads', f'predicted_{basin}_{origin}.csv')
-    predicted_df = pd.read_csv(csv_path)
-    print('CHECK3')
 
-    if predicted_df['init_month'].dtype == 'object':
+    # === Load predicted MDR ===
+    mdr_path = os.path.join('static', 'downloads', f'predicted_mdr_{origin}.csv')
+    mdr_df = pd.read_csv(mdr_path)
+
+    if mdr_df['init_month'].dtype == 'object':
         # Quick check if it looks like a date string (e.g., contains a dash and length matches)
-        sample_val = predicted_df['init_month'].dropna().iloc[0]
+        sample_val = mdr_df['init_month'].dropna().iloc[0]
         if isinstance(sample_val, str) and len(sample_val) >= 10 and '-' in sample_val:
-            predicted_df['init_month'] = pd.to_datetime(
-                predicted_df['init_month'],
+            mdr_df['init_month'] = pd.to_datetime(
+                mdr_df['init_month'],
                 format="%Y-%m-%d",
                 errors="coerce"
             )
-    print('CHECK4')
     
-    predicted_subset_df = predicted_df[predicted_df['year'] >= 2006].copy()
-    if pd.api.types.is_datetime64_any_dtype(predicted_subset_df['init_month']):
-        predicted_subset_df['init_month'] = predicted_subset_df['init_month'].dt.month
+    mdr_df = mdr_df[mdr_df['year'] >= 2006].copy()
+    if pd.api.types.is_datetime64_any_dtype(mdr_df['init_month']):
+        mdr_df['init_month'] = mdr_df['init_month'].dt.month
     else:
-        predicted_subset_df['init_month'] = predicted_subset_df['init_month'].astype(int)
-    predicted_subset_df = predicted_subset_df[predicted_subset_df['init_month'] == month]
-    print('CHECK5')
+        mdr_df['init_month'] = mdr_df['init_month'].astype(int)
+    mdr_df = mdr_df[mdr_df['init_month'] == month]
 
-    observed_subset_df = observed_df[observed_df['year'] >= 2006].copy()
-    basin_col = f'ANOMALY_{basin.upper()}'
-    observed_subset_df = observed_subset_df[['year', basin_col]]
 
-    print('CHECK6')
-    for year in range(2015, 2025):
-        if year not in predicted_subset_df['year'].values:
-            ss = np.nan
-        else:
-            predicted_temp_df = predicted_subset_df[predicted_subset_df['year'] <= year]
-            observed_temp_df = observed_subset_df[observed_subset_df['year'] <= year]
+    # === Load predicted MDR ===
+    trop_path = os.path.join('static', 'downloads', f'predicted_trop_{origin}.csv')
+    trop_df = pd.read_csv(trop_path)
 
-            merged = pd.merge(
-            predicted_temp_df[['year', 'rel_sst']],
-            observed_temp_df[['year', basin_col]],
-            on='year',
-            how='inner'
+    if trop_df['init_month'].dtype == 'object':
+        # Quick check if it looks like a date string (e.g., contains a dash and length matches)
+        sample_val = trop_df['init_month'].dropna().iloc[0]
+        if isinstance(sample_val, str) and len(sample_val) >= 10 and '-' in sample_val:
+            trop_df['init_month'] = pd.to_datetime(
+                trop_df['init_month'],
+                format="%Y-%m-%d",
+                errors="coerce"
             )
+    
+    trop_df = trop_df[trop_df['year'] >= 2006].copy()
+    if pd.api.types.is_datetime64_any_dtype(trop_df['init_month']):
+        trop_df['init_month'] = trop_df['init_month'].dt.month
+    else:
+        trop_df['init_month'] = trop_df['init_month'].astype(int)
+    trop_df = trop_df[trop_df['init_month'] == month]
+
+
+    observed_mdr_subset_df = observed_df[observed_df['year'] >= 2006].copy()
+    observed_mdr_subset_df = observed_mdr_subset_df[['year', 'ANOMALY_MDR', 'ANOMALY_TROP']]
+
+
+    # === Loop through years to compute skill scores ===
+    for year in range(2015, 2025):
+        skill_scores[year] = {}
+
+        for basin_label, pred_df, obs_col in [
+            ('MDR', mdr_df, 'ANOMALY_MDR'),
+            ('TROP', trop_df, 'ANOMALY_TROP')
+        ]:
+            pred_temp = pred_df[pred_df['year'] <= year]
+            obs_temp = observed_df[observed_df['year'] <= year][['year', obs_col]]
+            merged = pd.merge(pred_temp[['year', 'rel_sst']], obs_temp, on='year', how='inner')
+
             if len(merged) >= 2:
                 # Correlation Coefficient
-                rho = np.corrcoef(merged['rel_sst'], merged[basin_col])[0, 1]
-
+                rho = np.corrcoef(merged['rel_sst'], merged[obs_col])[0, 1]
 
                 # Potential Skill
                 ps = rho**2
 
                 # Unconditional Bias
-                ub = ((merged['rel_sst'].mean() - merged[basin_col].mean()) / merged[basin_col].std(ddof=1))**2
+                ub = ((merged['rel_sst'].mean() - merged[obs_col].mean()) / merged[obs_col].std(ddof=1))**2
 
                 # Conditional Bias
-                cb = (rho - (merged[basin_col].std(ddof=1) / merged['rel_sst'].std(ddof=1)))**2
-
-                 # Skill Score
-                ss = ps - ub - cb
+                cb = (rho - (merged[obs_col].std(ddof=1) / merged['rel_sst'].std(ddof=1)))**2
                 
+                # Skill Score
+                ss = ps - ub - cb
             else:
                 ss = np.nan
-                
+
             if year not in skill_scores:
                 skill_scores[year] = {}
-            skill_scores[year][origin] = ss
-    print('CHECK7')
+        
+            skill_scores[year][basin_label] = ss
+
     ss_df = pd.DataFrame.from_dict(skill_scores, orient='index')
     ss_df.index.name = 'year'
     ss_df.reset_index(inplace=True)
     ss_df.sort_values(by='year', inplace=True)
-    print('CHECK8')
     
     ss_df.rename(columns=MONTH_MAP, inplace=True)
-    print('CHECK9')
     month_title = calendar.month_name[int(month)]
-    print('CHECK10')
     print(ss_df.head())
     
-    img_bytes = skill_score_graph(ss_df, basin, start_year, end_year, month_title, origin)
-    print('CHECK11')
+    img_bytes = skill_score_graph(ss_df, start_year, end_year, month_title, origin)
+
     return img_bytes
 
 
@@ -120,7 +136,7 @@ from matplotlib.ticker import ScalarFormatter, FormatStrFormatter
 import io
 # month is passed as a string with title case
 # basin is passed as a string with lower case
-def skill_score_graph(df, basin, start_year, end_year, month = None, origin = None):
+def skill_score_graph(df, start_year, end_year, month = None, origin = None):
     print('hi0')
     # Filter to year range
     df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
@@ -134,17 +150,18 @@ def skill_score_graph(df, basin, start_year, end_year, month = None, origin = No
 
     df = df.sort_values(by='year')
 
-    models = [col for col in df.columns if col != 'year']
-    colors = cm.get_cmap('tab20', len(models))
+    models = [col for col in df.columns if col != 'year']  # Should be ['MDR', 'TROP']
+    colors = {'MDR': 'tab:blue', 'TROP': 'tab:orange'}
 
     y_min = min(df[model].min() for model in models)
     y_max = max(df[model].max() for model in models)
-    y_max_rounded = min(np.ceil(y_max * 4) / 4, 1.0)  # cap positive max at 1.0
+    y_min = min(y_min, -1)
+    y_max = min(max(y_max, 0.25), 1.0)
     print('hi2')
     plt.figure(figsize=(12, 6))
 
-    for idx, model in enumerate(models):
-        plt.plot(df['year'], df[model], marker='o', label=model, color=colors(idx))
+    for model in models:
+        plt.plot(df['year'], df[model], marker='o', label=model, color=colors.get(model, 'gray'))
 
     # Set symmetric log scale on y-axis with linthresh=1 to keep linear spacing near zero
     plt.yscale('symlog', linthresh=1)
@@ -208,7 +225,7 @@ def skill_score_graph(df, basin, start_year, end_year, month = None, origin = No
     plt.ylabel('Skill Score', fontsize=22)
 
     print('hi6')
-    plt.title(f'Skill Scores by Initialization Month and Origin\n({basin.upper()}, {month}, {origin.replace("_", " ").upper()})',
+    plt.title(f'Skill Scores by Initialization Month and Origin\n(MDR & TROP, {month}, {origin.replace("_", " ").upper()})',
               fontsize=24,
               color='black',
               fontweight='bold',
