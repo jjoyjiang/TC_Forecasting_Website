@@ -11,6 +11,7 @@ from py import skill_score as ss
 import io
 from py import attribute as atrb
 from py import multi_select_forecasted_graphs as msfg
+import traceback
 
 pn.extension()
 
@@ -342,15 +343,15 @@ def get_multi_forecast_layout():
     # or use Dropdown:
     # quantity_select = pn.widgets.Dropdown(name='Quantity of Interest', options=quantities, value='Hurricane')
     # select one (for now) for init month
-    init_month_multi_select = pn.widgets.Select(
+    init_month_multi_select = pn.widgets.MultiChoice(
         name='Initialization Month(s)',
         options=['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August'],
-        value='June',  # default selection
+        placeholder='Select initialization month(s)...'
     )
     # select one (for now) for research center (model)
     model_multi_select = pn.widgets.MultiChoice(
         name='Research Center(s)',
-        options=['BOM', 'CMCC', 'DWD', 'ECCC', 'ECMWF', 'JMA', 'MF', 'NCEP', 'NMME_NASA', 'NMME_NCEP', 'UKMO'],
+        options=['Total Unweighted Average', 'Total Weighted Average', 'BOM', 'CMCC', 'DWD', 'ECCC', 'ECMWF', 'JMA', 'MF', 'NCEP', 'NMME_NASA', 'NMME_NCEP', 'UKMO'],
         placeholder='Select model(s)...'
     )
 
@@ -364,6 +365,15 @@ def get_multi_forecast_layout():
     )
 
     update_button = pn.widgets.Button(name='Generate Images', button_type='primary')
+
+    loading_spinner = pn.indicators.LoadingSpinner(
+        value=True,            # animate
+        visible=False,         # only visible while loading
+        width=50,
+        height=50,
+        color="dark"           # black spinner for white background
+    )
+    pn.Row(update_button, loading_spinner, align='center'),
 
 
     status = pn.pane.Markdown()
@@ -395,29 +405,17 @@ def get_multi_forecast_layout():
     #)
     # Top image: time series
     # Bottom row: skill scores (MDR and Trop)
-    image_grid = pn.Column (
-        pn.Row(
-            pn.Column(image_pane_time_series),
-            sizing_mode='stretch_width',
-            align='center'
-        ),
-        pn.Row(
-            pn.Column(image_pane_skill_score_mdr),
-            pn.Column(image_pane_skill_score_trop),
-            sizing_mode='stretch_width',
-            align='center'
-        ),
-        pn.Row(
-            pn.Column(image_pane_attribute),
-            pn.Column(image_pane_reliability),
-            pn.Column(image_pane_roc),
-            sizing_mode = 'stretch_width',
-            align= 'center'
-        ),
+
+    image_pane_list = []  # list of pn.pane.PNG objects
+
+    # This will hold the dynamic layout for the images
+    dynamic_image_container = pn.Column(sizing_mode='stretch_width', align='center')
+
+    image_grid = pn.Column(
+        dynamic_image_container,
         sizing_mode='stretch_width',
-        width=1000,
-        margin=10,
-        align='center'
+        align='center',
+        margin=10
     )
 
 
@@ -451,23 +449,136 @@ def get_multi_forecast_layout():
         selected_quantity = quantity_select.value
         selected_center = model_multi_select.value
         selected_init_month = init_month_multi_select.value
-        
+
+        loading_spinner.visible = True
+
         try:
-            # img_bytes = fg.panel_predicted_graph(selected_quantity, start, end, selected_init_month, selected_center)
-            # image_pane_time_series.object = io.BytesIO(img_bytes)
-            image_pane_time_series.object = msfg.panel_predicted_graph(selected_quantity, start, end, selected_init_month, selected_center)
-            #image_pane_skill_score_mdr.object = ss.skill_score_generate_graph('mdr', selected_center, selected_init_month, start, end)
-            #image_pane_skill_score_trop.object = ss.skill_score_generate_graph('trop', selected_center, selected_init_month, start, end)
-            #image_pane_attribute.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'attribute')
-            #image_pane_reliability.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'reliability')
-            #image_pane_roc.object = atrb.generate_attribute_graph(selected_center, selected_init_month, 'roc')
+            # Clear old images
+            dynamic_image_container.objects.clear()
+            image_pane_list.clear()
+
+            # Get list of image bytes
+            print('trying')
+            img_bytes_list, section_img_count, no_data_messages = msfg.panel_predicted_graph(
+                selected_quantity, start, end, selected_init_month, selected_center
+            )
+            print("LENGTH:")
+            print(len(img_bytes_list))
+            print("NO DATA MESSAGES:")
+            print(no_data_messages)
+            
+
+            section_titles = []
+            section_subtext = []
+            sections = []
+
+            print("SECTION IMG COUNT:")
+            print(section_img_count[0])
+            if (section_img_count[0] > 0) or (len(no_data_messages[0])>0):
+                print("panel weighted avg")
+                section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Forecasts Averaged over All Research Centers")
+                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[0]]
+                section_subtext.append(subtexts)
+                sections.append(img_bytes_list[:section_img_count[0]])
+
+                selected_center = list(selected_center)
+                selected_center.remove("Total Weighted Average")
+
+            #import sys
+            #sys.exit()
+
+            n_multicenter = len(selected_init_month)
+            n_multimonth = len(selected_center)
+
+            if (section_img_count[1]>0) or (len(no_data_messages[1])>0):
+                section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Forecasts by Initialization Month for Selected Research Centers")
+                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[1]]
+                section_subtext.append(subtexts)
+                sections.append(img_bytes_list[section_img_count[0]:section_img_count[1]+section_img_count[0]])
+        
+            if (section_img_count[2]>0) or (len(no_data_messages[2])>0):
+                section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Forecasts by Research Center for Each Initialization Month (with Percentiles)")
+                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[2]]
+                section_subtext.append(subtexts)
+                sections.append(img_bytes_list[section_img_count[1]+section_img_count[0]:section_img_count[1]+section_img_count[0]+section_img_count[2]])
+
+            if (section_img_count[3]>0) or (len(no_data_messages[3])>0):
+                section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Skill Scores by Research Center and Initialization Month")
+                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[3]]
+                section_subtext.append(subtexts)
+                sections.append(img_bytes_list[section_img_count[1]+section_img_count[0]+section_img_count[2]:section_img_count[1]+section_img_count[0]+section_img_count[2]+section_img_count[3]])
+            
+            if (section_img_count[4]>0) or (len(no_data_messages[4])>0):
+                print("LAST PART")
+                section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Attribute/Reliability by Research Center and Initialization Month")
+                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[4]]
+                section_subtext.append(subtexts)
+                sections.append(img_bytes_list[section_img_count[1]+section_img_count[0]+section_img_count[2]+section_img_count[3]:])
+
+            
+            for i, (title, subtext_list, section_imgs) in enumerate(zip(section_titles, section_subtext, sections)):
+                dynamic_image_container.append(pn.pane.HTML(
+                    "<hr style='border: none; height: 1px; background-color: black; margin: 10px 0;'>",
+                    sizing_mode='stretch_width'
+                ))
+                dynamic_image_container.append(pn.pane.Markdown(title))
+                
+                # Append each paragraph separately, so each appears after the title
+                for paragraph in subtext_list:
+                    dynamic_image_container.append(pn.pane.Markdown(paragraph))
+
+
+                is_last_section = (i == len(section_titles) - 1)
+                valid_imgs = [img for img in section_imgs if img is not None]
+
+                if not is_last_section:
+                    # All images in one row
+                    row = pn.Row(sizing_mode='stretch_width', align='center')
+                    for img_bytes in valid_imgs:
+                        try:
+                            if not isinstance(img_bytes, (bytes, bytearray)):
+                                raise TypeError(f"Expected bytes but got {type(img_bytes)}")
+                            pane = pn.pane.PNG(io.BytesIO(img_bytes), height=300, width=500)
+                            image_pane_list.append(pane)
+                            row.append(pane)
+                        except Exception as e:
+                            error_str = f"{type(e).__name__}: {e}"
+                            traceback.print_exc()
+                            status.object = f"Error updating images: {error_str}"
+                    dynamic_image_container.append(row)
+                else:
+                    # Last section: split into rows of 3
+                    for j in range(0, len(valid_imgs), 3):
+                        row_imgs = valid_imgs[j:j + 3]
+                        row = pn.Row(sizing_mode='stretch_width', align='center')
+                        for img_bytes in row_imgs:
+                            try:
+                                pane = pn.pane.PNG(io.BytesIO(img_bytes), height=300, width=500)
+                                image_pane_list.append(pane)
+                                row.append(pane)
+                            except Exception as e:
+                                error_str = f"{type(e).__name__}: {e}"
+                                traceback.print_exc()
+                                status.object = f"Error updating images: {error_str}"
+                        dynamic_image_container.append(row)
+            
+            
+
+            # Create PNG panes and add to layout
+           # for img_bytes in img_bytes_list:
+            #    pane = pn.pane.PNG(io.BytesIO(img_bytes), height=300, width=500)
+            #    image_pane_list.append(pane)
+            #    dynamic_image_container.append(pane)
+
             status.object = f"Images updated for {start}–{end}"
+
         except Exception as e:
             status.object = f"Error updating images: {e}"
+        finally:
+            loading_spinner.visible = False
 
-        status.object = f"Images updated for {start}–{end}"
         message_pane.object += "<script>notifyParentImagesUpdated()</script>"
-
+    
     update_button.on_click(update_plot)
 
     return pn.Column(
@@ -479,6 +590,7 @@ def get_multi_forecast_layout():
         init_month_multi_select,
         year_slider,
         update_button,
+        loading_spinner,
         status,
         message_pane,
         image_grid,

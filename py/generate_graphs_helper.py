@@ -7,45 +7,37 @@ import pandas as pd
 def storm_count(df):
     basin = tracks.TrackDataset(basin='north_atlantic', source='hurdat', include_btk=False)
 
-    # basin_df=basin.to_dataframe()
-    # print('--------------------BASIN------------------------')
-    # print(basin_df.head())
-
-    print(type(basin.keys)) # list of storm IDs
-    print(type(basin.keys[0])) # storm ID AL##YYYY, AL for North Atlantic
-    print(len(basin.keys)) # 1991 total storms (not the year 1991)
-    print(basin.keys[0]) # last recorded storm seems to be AL192024
-
-    min_wind = 33 #knots
-    min_time_steps = 9 # 6 hour times steps * 8 = 48 hours. Actually make it 9 for over two days
-    allowed_types = {'HU','SS', 'TS'}  # Hurricanes, Subtropical Storms, Tropical Storms
+    min_wind = 33  # knots
+    min_time_steps = 9
+    allowed_types = {'HU', 'SS', 'TS'}
 
     storm_years = defaultdict(list)
     for storm_id in basin.keys:
-        year=int(storm_id[-4:])
+        year = int(storm_id[-4:])
         storm_years[year].append(storm_id)
 
-    storm_counts = []
+    # Build a dict {year: count}
+    storm_counts = {}
     for year in df['year'].unique():
         count = 0
         for storm_id in storm_years.get(year, []):
-            # Using basin.data gets raw data directly, much faster than get_storm()
-            # Goes from 2 seconds per year to less than 1 second for all years combined
             storm = basin.data[storm_id]
             vmax_list = storm['vmax']
             type_list = storm['type']
-            # date_list = storm['time']
             steps = 0
 
-            # change to entire year, not just Aug to Oct for model
             for vmax, t in zip(vmax_list, type_list):
-                # if 8 <= date.month <= 10:
                 if vmax >= min_wind and t in allowed_types:
                     steps += 1
             if steps >= min_time_steps:
                 count += 1
-        storm_counts.append(count)
-    df['count'] = storm_counts
+        storm_counts[year] = count
+
+    # Map counts back to the dataframe by year
+    df['count'] = df['year'].map(storm_counts)
+
+    return df
+
 
 def hurricane_count(df):
     print('hurricane5')
@@ -686,16 +678,19 @@ def new_hurricane_graph(df, title, user_id = None, start_year = None, end_year =
 
     # plt.step(df['year'], df['lambda'], where='mid', label='Lambda (mean)', color='black', linewidth=2)
 
-    plt.plot(df['year'], df['p_50'],color='red', linewidth=3, label='50th percentile (median)')
+    plt.plot(df['year'], df['p_50'], color='red', linewidth=3, label='50th percentile (median)')
 
+    # Add shaded percentile bands with labels
     plt.fill_between(df['year'], df['p_05'], df['p_25'], 
-                     color='blue', alpha=0.3)
+                    color='blue', alpha=0.3, label='5th–25th percentile')
     plt.fill_between(df['year'], df['p_25'], df['p_75'], 
-                     color='blue', alpha=0.5)
+                    color='blue', alpha=0.5, label='25th–75th percentile')
     plt.fill_between(df['year'], df['p_75'], df['p_95'], 
-                     color='blue', alpha=0.3)
+                    color='blue', alpha=0.3, label='75th–95th percentile')
 
-    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
+    # Add observed points
+    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5, label='Observed')
+
 
     plt.xlabel('Year', fontsize=24)
     # plt.xticks(df['year'][::5], fontsize = 21)  # Show every second year
@@ -712,6 +707,7 @@ def new_hurricane_graph(df, title, user_id = None, start_year = None, end_year =
     # Use the 'label' paramter in the previous functions to make legend
     # plt.legend()
     plt.grid(True)
+    plt.legend(fontsize=16, loc='upper left', frameon=True)
     plt.tight_layout()
 
     # Get current figure
@@ -736,16 +732,19 @@ def new_TC_graph(df, title, user_id = None, start_year = None, end_year = None):
         df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     plt.figure(figsize=(12, 6))
 
-    plt.plot(df['year'], df['p_50'],color='red', linewidth=3, label='50th percentile (median)')
+    plt.plot(df['year'], df['p_50'], color='red', linewidth=3, label='50th percentile (median)')
 
+    # Add shaded percentile bands with labels
     plt.fill_between(df['year'], df['p_05'], df['p_25'], 
-                     color='blue', alpha=0.3)
+                    color='blue', alpha=0.3, label='5th–25th percentile')
     plt.fill_between(df['year'], df['p_25'], df['p_75'], 
-                     color='blue', alpha=0.5)
+                    color='blue', alpha=0.5, label='25th–75th percentile')
     plt.fill_between(df['year'], df['p_75'], df['p_95'], 
-                     color='blue', alpha=0.3)
+                    color='blue', alpha=0.3, label='75th–95th percentile')
 
-    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
+    # Add observed points
+    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5, label='Observed')
+
 
     plt.xlabel('Year', fontsize=24)
     plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=8, integer = True))
@@ -761,6 +760,7 @@ def new_TC_graph(df, title, user_id = None, start_year = None, end_year = None):
     # Use the 'label' paramter in the previous functions to make legend
     # plt.legend()
     plt.grid(True)
+    plt.legend(fontsize=16, loc='upper left', frameon=True)
     plt.tight_layout()
 
     # Get current figure
@@ -785,16 +785,19 @@ def new_PDI_graph(df, title, user_id = None, start_year = None, end_year = None)
         df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     plt.figure(figsize=(12, 6))
 
-    plt.plot(df['year'], df['p_50'],color='red', linewidth=3, label='50th percentile (median)')
+    plt.plot(df['year'], df['p_50'], color='red', linewidth=3, label='50th percentile (median)')
 
+    # Add shaded percentile bands with labels
     plt.fill_between(df['year'], df['p_05'], df['p_25'], 
-                     color='blue', alpha=0.3)
+                    color='blue', alpha=0.3, label='5th–25th percentile')
     plt.fill_between(df['year'], df['p_25'], df['p_75'], 
-                     color='blue', alpha=0.5)
+                    color='blue', alpha=0.5, label='25th–75th percentile')
     plt.fill_between(df['year'], df['p_75'], df['p_95'], 
-                     color='blue', alpha=0.3)
+                    color='blue', alpha=0.3, label='75th–95th percentile')
 
-    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
+    # Add observed points
+    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5, label='Observed')
+
 
     plt.xlabel('Year', fontsize=24)
     plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=8, integer = True))
@@ -810,6 +813,7 @@ def new_PDI_graph(df, title, user_id = None, start_year = None, end_year = None)
     # Use the 'label' paramter in the previous functions to make legend
     # plt.legend()
     plt.grid(True)
+    plt.legend(fontsize=16, loc='upper left', frameon=True)
     plt.tight_layout()
 
     # Get current figure
@@ -832,16 +836,18 @@ def new_ACE_graph(df, title, user_id = None, start_year = None, end_year = None)
         df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
     plt.figure(figsize=(12, 6))
 
-    plt.plot(df['year'], df['p_50'],color='red', linewidth=3, label='50th percentile (median)')
+    plt.plot(df['year'], df['p_50'], color='red', linewidth=3, label='50th percentile (median)')
 
+    # Add shaded percentile bands with labels
     plt.fill_between(df['year'], df['p_05'], df['p_25'], 
-                     color='blue', alpha=0.3)
+                    color='blue', alpha=0.3, label='5th–25th percentile')
     plt.fill_between(df['year'], df['p_25'], df['p_75'], 
-                     color='blue', alpha=0.5)
+                    color='blue', alpha=0.5, label='25th–75th percentile')
     plt.fill_between(df['year'], df['p_75'], df['p_95'], 
-                     color='blue', alpha=0.3)
+                    color='blue', alpha=0.3, label='75th–95th percentile')
 
-    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5)
+    # Add observed points
+    plt.scatter(df['year'], df['count'], s=120, facecolors='lightgray', edgecolors='black', zorder=5, label='Observed')
 
     plt.xlabel('Year', fontsize=24)
     plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=8, integer = True))
@@ -857,6 +863,7 @@ def new_ACE_graph(df, title, user_id = None, start_year = None, end_year = None)
     # Use the 'label' paramter in the previous functions to make legend
     # plt.legend()
     plt.grid(True)
+    plt.legend(fontsize=16, loc='upper left', frameon=True)
     plt.tight_layout()
 
     # Get current figure

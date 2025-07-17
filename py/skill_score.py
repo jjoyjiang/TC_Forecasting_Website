@@ -5,14 +5,14 @@ import os
 import calendar
 
 MONTH_MAP = {
-    1: 'Jan',
-    2: 'Feb',
-    3: 'Mar',
-    4: 'Apr',
+    1: 'January',
+    2: 'February',
+    3: 'March',
+    4: 'April',
     5: 'May',
-    6: 'Jun',
-    7: 'Jul',
-    8: 'Aug'
+    6: 'June',
+    7: 'July',
+    8: 'August'
 }
 
 
@@ -72,6 +72,9 @@ def skill_score_generate_graph(origin, month, start_year, end_year):
     else:
         trop_df['init_month'] = trop_df['init_month'].astype(int)
     trop_df = trop_df[trop_df['init_month'] == month]
+
+    if mdr_df.empty and trop_df.empty:
+        return (f"No data available for center {origin.upper()} during month {MONTH_MAP[month]}.")
 
 
     observed_mdr_subset_df = observed_df[observed_df['year'] >= 2006].copy()

@@ -190,15 +190,45 @@ def roc_plot(y_true, y_prob, title, path):
 
 def generate_attribute_graph(origin, month, graph_type):
 
+    #MONTH_MAP = {
+    #    'January': 'jan',
+    #    'February': 'feb',
+    #    'March': 'mar',
+    #    'April': 'apr',
+    #    'May': 'may',
+    #    'June': 'jun',
+    #    'July': 'jul',
+    #    'August': 'aug'
+    #}
     MONTH_MAP = {
-        'January': 'jan',
-        'February': 'feb',
-        'March': 'mar',
-        'April': 'apr',
-        'May': 'may',
-        'June': 'jun',
-        'July': 'jul',
-        'August': 'aug'
+        1: 'jan',
+        2: 'feb',
+        3: 'mar',
+        4: 'apr',
+        5: 'may',
+        6: 'jun',
+        7: 'jul',
+        8: 'aug'
+    }
+    MONTH_MAP_2 = {
+        1: 'January',
+        2: 'February',
+        3: 'March',
+        4: 'April',
+        5: 'May',
+        6: 'June',
+        7: 'July',
+        8: 'August'
+    }
+    MONTH_MAP_3 = {
+        'jan': 'January',
+        'feb': 'February',
+        'mar': 'March',
+        'apr': 'April',
+        'may': 'May',
+        'jun': 'June',
+        'jul': 'July',
+        'aug': 'August'
     }
     month = MONTH_MAP[month]
     origin = origin.lower()
@@ -209,7 +239,7 @@ def generate_attribute_graph(origin, month, graph_type):
     csv_file = Path("csv_files/reliability") / f"reliability_{origin}_{month}.csv"
     if not csv_file.exists():
         print(f"File not found: {csv_file}")
-        return None
+        return f"No data available for center {origin.upper()} during month {MONTH_MAP_3[month]}."
 
     df = pd.read_csv(csv_file)
 
@@ -237,7 +267,7 @@ def generate_attribute_graph(origin, month, graph_type):
     })
 
     # Generate plots
-    title_label = f"{origin.replace('_', ' ').upper()} {month.upper()}"
+    title_label = f"{origin.replace('_', ' ').upper()} {MONTH_MAP_3[month]}"
 
     if graph_type == 'reliability':
         img_bytes = reliability_plot(
