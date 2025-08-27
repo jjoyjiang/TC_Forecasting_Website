@@ -477,7 +477,7 @@ def get_multi_forecast_layout():
             if (section_img_count[0] > 0) or (len(no_data_messages[0])>0):
                 print("panel weighted avg")
                 section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Forecasts Averaged over All Research Centers")
-                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[0]]
+                subtexts = [f"<p style='font-size:14px; color:#444; margin: 2px 0;'>{text}</p>" for text in no_data_messages[0]]
                 section_subtext.append(subtexts)
                 sections.append(img_bytes_list[:section_img_count[0]])
 
@@ -492,26 +492,26 @@ def get_multi_forecast_layout():
 
             if (section_img_count[1]>0) or (len(no_data_messages[1])>0):
                 section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Forecasts by Initialization Month for Selected Research Centers")
-                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[1]]
+                subtexts = [f"<p style='font-size:14px; color:#444; margin: 2px 0;'>{text}</p>" for text in no_data_messages[1]]
                 section_subtext.append(subtexts)
                 sections.append(img_bytes_list[section_img_count[0]:section_img_count[1]+section_img_count[0]])
         
             if (section_img_count[2]>0) or (len(no_data_messages[2])>0):
                 section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Forecasts by Research Center for Each Initialization Month (with Percentiles)")
-                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[2]]
+                subtexts = [f"<p style='font-size:14px; color:#444; margin: 2px 0;'>{text}</p>" for text in no_data_messages[2]]
                 section_subtext.append(subtexts)
                 sections.append(img_bytes_list[section_img_count[1]+section_img_count[0]:section_img_count[1]+section_img_count[0]+section_img_count[2]])
 
             if (section_img_count[3]>0) or (len(no_data_messages[3])>0):
                 section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Skill Scores by Research Center and Initialization Month")
-                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[3]]
+                subtexts = [f"<p style='font-size:14px; color:#444; margin: 2px 0;'>{text}</p>" for text in no_data_messages[3]]
                 section_subtext.append(subtexts)
                 sections.append(img_bytes_list[section_img_count[1]+section_img_count[0]+section_img_count[2]:section_img_count[1]+section_img_count[0]+section_img_count[2]+section_img_count[3]])
             
             if (section_img_count[4]>0) or (len(no_data_messages[4])>0):
                 print("LAST PART")
                 section_titles.append("<h2 style='font-size:22px; font-weight:bold;'>Attribute/Reliability by Research Center and Initialization Month")
-                subtexts = [f"<p style='font-size:14px; color:#444;'>{text}</p>" for text in no_data_messages[4]]
+                subtexts = [f"<p style='font-size:14px; color:#444; margin: 2px 0;'>{text}</p>" for text in no_data_messages[4]]
                 section_subtext.append(subtexts)
                 sections.append(img_bytes_list[section_img_count[1]+section_img_count[0]+section_img_count[2]+section_img_count[3]:])
 
