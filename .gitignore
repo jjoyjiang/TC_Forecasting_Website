@@ -3,4 +3,5 @@ static/downloads/HadISST_sst.nc.gz.crdownload
 static/downloads/HadISST_sst.nc.gz (1).crdownload
 static/downloads/HadISST_sst.nc
 venv
-py/__pycache__
+__pycache__/
+*.pyc
